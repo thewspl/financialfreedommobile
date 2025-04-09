@@ -4,7 +4,26 @@ import { Stack } from 'expo-router'
 import { AuthProvider } from '@/contexts/authContext'
 
 const StackLayout = () => {
-    return <Stack screenOptions={{ headerShown: false }}></Stack>
+    return <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen
+            name='(modals)/profileModal.tsx'
+            options={{
+                presentation: 'modal',
+            }}
+        />
+        <Stack.Screen
+            name='(modals)/walletModal.tsx'
+            options={{
+                presentation: 'modal',
+            }}
+        />
+        <Stack.Screen
+            name='(modals)/transactionModal.tsx'
+            options={{
+                presentation: 'modal',
+            }}
+        />
+    </Stack>
 }
 
 export default function RootLayout() {
