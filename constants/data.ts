@@ -17,7 +17,7 @@ export const expenseCategories: ExpenseCategoriesType = {
         bgColor: "#075985", // Dark Blue
     },
     utilities: {
-        label: "Utilities", //Utilities
+        label: "Faturalar", //Utilities
         value: "utilities",
         icon: Icons.Lightbulb,
         bgColor: "#ca8a04", // Dark Golden Brown
