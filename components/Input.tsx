@@ -19,7 +19,7 @@ const Input = (props: InputProps) => {
                 ]}
                 placeholderTextColor={colors.neutral400}
                 ref={props.inputRef && props.inputRef}
-                {...props   }
+                {...props}
             />
         </View>
     )
