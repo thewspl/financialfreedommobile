@@ -9,7 +9,8 @@ import { BarChart } from "react-native-gifted-charts";
 import Typo from '@/components/Typo'
 import Loading from '@/components/Loading'
 import { useAuth } from '@/contexts/authContext'
-import { fetchWeeklyStats } from '@/services/transactionService'
+import { fetchMonthlyStats, fetchWeeklyStats, fetchYearlyStats } from '@/services/transactionService'
+import TransactionList from '@/components/TransactionList'
 
 
 const Statistics = () => {
@@ -17,6 +18,7 @@ const Statistics = () => {
     const { user } = useAuth();
     const [chartData, setChartData] = useState([]);
     const [chartLoading, setChartLoading] = useState(false);
+    const [transactions, setTransactions] = useState([]);
 
     useEffect(() => {
         if (activeIndex == 0) {
@@ -36,15 +38,32 @@ const Statistics = () => {
         setChartLoading(false);
         if (res.success) {
             setChartData(res?.data?.stats);
+            setTransactions(res?.data?.transactions);
         } else {
             Alert.alert("Hata", res.msg);
         }
     }
     const getMonthlyStats = async () => {
-        //Aylık
+        setChartLoading(true);
+        let res = await fetchMonthlyStats(user?.uid as string);
+        setChartLoading(false);
+        if (res.success) {
+            setChartData(res?.data?.stats);
+            setTransactions(res?.data?.transactions);
+        } else {
+            Alert.alert("Hata", res.msg);
+        }
     }
     const getYearlyStats = async () => {
-        //Yıllık
+        setChartLoading(true);
+        let res = await fetchYearlyStats(user?.uid as string);
+        setChartLoading(false);
+        if (res.success) {
+            setChartData(res?.data?.stats);
+            setTransactions(res?.data?.transactions);
+        } else {
+            Alert.alert("Hata", res.msg);
+        }
     }
 
     return (
@@ -118,6 +137,14 @@ const Statistics = () => {
                             )
                         }
 
+                    </View>
+
+                    <View>
+                        <TransactionList
+                            title='İşlemler'
+                            emptyListMessage='Henüz işlem yok'
+                            data={transactions}
+                        />
                     </View>
                 </ScrollView>
             </View>
