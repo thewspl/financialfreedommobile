@@ -3,7 +3,7 @@ import { ResponseType, TransactionType, WalletType } from "@/types";
 import { collection, deleteDoc, doc, getDoc, query, setDoc, Timestamp, where, updateDoc, orderBy, getDocs } from "firebase/firestore";
 import { uploadFileToCloudinary } from "./imageService";
 import { createOrUpdateWallet } from "./walletService";
-import { getLast7Days } from "@/utils/common";
+import { getLast12Months, getLast7Days, getYearsRange } from "@/utils/common";
 import { scale } from "@/utils/styling";
 import { colors } from "@/constants/theme";
 
@@ -305,3 +305,149 @@ export const fetchWeeklyStats = async (
         return { success: false, msg: err.message };
     }
 }
+
+export const fetchMonthlyStats = async (uid: string): Promise<ResponseType> => {
+    try {
+        const db = firestore;
+        const today = new Date();
+        const twelveMonthsAgo = new Date(today);
+        twelveMonthsAgo.setMonth(today.getMonth() - 12);
+
+
+        const transactionsQuery = query(
+            collection(db, "transactions"),
+            where("date", ">=", Timestamp.fromDate(twelveMonthsAgo)),
+            where("date", "<=", Timestamp.fromDate(today)),
+            orderBy("date", "desc"),
+            where("uid", "==", uid)
+        );
+
+        const querySnapshot = await getDocs(transactionsQuery);
+        const monthlyData = getLast12Months();
+        const transactions: TransactionType[] = [];
+
+        querySnapshot.forEach((doc) => {
+            const transaction = doc.data() as TransactionType;
+            transaction.id = doc.id;
+            transactions.push(transaction)
+
+            const transactionDate = (transaction.date as Timestamp).toDate();
+            const monthName = transactionDate.toLocaleString("default", {    //default tr-TR olabilir
+                month: "short",
+            })
+            const shortYear = transactionDate.getFullYear().toString().slice(-2);
+            const monthData = monthlyData.find(
+                (month) => month.month === `${monthName} ${shortYear}`
+            );
+
+            if (monthData) {
+                if (transaction.type === "income") {
+                    monthData.income += transaction.amount;
+                } else if (transaction.type === "expense") {
+                    monthData.expense += transaction.amount;
+                }
+            }
+        });
+
+        const stats = monthlyData.flatMap((month) => [
+            {
+                value: month.income,
+                label: month.month,
+                spacing: scale(4),
+                labelWidth: scale(46),
+                frontColor: colors.primary,
+            },
+            {
+                value: month.expense,
+                frontColor: colors.rose,
+            },
+        ]);
+
+        return {
+            success: true,
+            data: {
+                stats,
+                transactions,
+            },
+        };
+    } catch (error) {
+        console.error("Aylık istatistikler alırken hata: ", error);
+        return {
+            success: false,
+            msg: "Aylık istatistikler alınırken hata meydana geldi",
+        };
+    }
+};
+
+export const fetchYearlyStats = async (uid: string): Promise<ResponseType> => {
+    try {
+        const db = firestore;
+
+        const transactionsQuery = query(
+            collection(db, "transactions"),
+            orderBy("date", "desc"),
+            where("uid", "==", uid)
+        );
+
+        const querySnapshot = await getDocs(transactionsQuery);
+        const transactions: TransactionType[] = [];
+
+        const firstTransaction = querySnapshot.docs.reduce((earliest, doc) => {
+            const transactionDate = doc.data().date.toDate();
+            return transactionDate < earliest ? transactionDate : earliest;
+        }, new Date());
+
+        const firstYear = firstTransaction.getFullYear();
+        const currentYear = new Date().getFullYear();
+
+        const yearlyData = getYearsRange(firstYear, currentYear);
+
+        querySnapshot.forEach((doc) => {
+            const transaction = doc.data() as TransactionType;
+            transaction.id = doc.id;
+            transactions.push(transaction)
+
+            const transactionYear = (transaction.date as Timestamp).toDate().getFullYear();
+
+            const yearData = yearlyData.find(
+                (item: any) => item.yearmonth === transactionYear.toString()
+            );
+
+            if (yearData) {
+                if (transaction.type === "income") {
+                    yearData.income += transaction.amount;
+                } else if (transaction.type === "expense") {
+                    yearData.expense += transaction.amount;
+                }
+            }
+        });
+
+        const stats = yearlyData.flatMap((year: any) => [
+            {
+                value: year.income,
+                label: year.year,
+                spacing: scale(4),
+                labelWidth: scale(35),
+                frontColor: colors.primary,
+            },
+            {
+                value: year.expense,
+                frontColor: colors.rose,
+            },
+        ]);
+
+        return {
+            success: true,
+            data: {
+                stats,
+                transactions,
+            },
+        };
+    } catch (error) {
+        console.error("Yıllık istatistikler alırken hata: ", error);
+        return {
+            success: false,
+            msg: "Yıllık istatistikler alınırken hata meydana geldi",
+        };
+    }
+};
