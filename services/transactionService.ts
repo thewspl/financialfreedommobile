@@ -392,37 +392,55 @@ export const fetchYearlyStats = async (uid: string): Promise<ResponseType> => {
         const querySnapshot = await getDocs(transactionsQuery);
         const transactions: TransactionType[] = [];
 
-        const firstTransaction = querySnapshot.docs.reduce((earliest, doc) => {
+        // Find the earliest transaction date
+        let firstTransaction = new Date();
+        querySnapshot.forEach((doc) => {
             const transactionDate = doc.data().date.toDate();
-            return transactionDate < earliest ? transactionDate : earliest;
-        }, new Date());
+            if (transactionDate < firstTransaction) {
+                firstTransaction = transactionDate;
+            }
+        });
 
         const firstYear = firstTransaction.getFullYear();
         const currentYear = new Date().getFullYear();
 
-        const yearlyData = getYearsRange(firstYear, currentYear);
+        // Create array of years from first transaction to current year
+        interface YearlyDataItem {
+            year: string;
+            yearmonth: string;
+            income: number;
+            expense: number;
+        }
 
+        const yearlyData: YearlyDataItem[] = [];
+        for (let year = firstYear; year <= currentYear; year++) {
+            yearlyData.push({
+                year: year.toString(),
+                yearmonth: year.toString(),
+                income: 0,
+                expense: 0
+            });
+        }
+
+        // Process transactions and add to yearly totals
         querySnapshot.forEach((doc) => {
             const transaction = doc.data() as TransactionType;
             transaction.id = doc.id;
-            transactions.push(transaction)
+            transactions.push(transaction);
 
             const transactionYear = (transaction.date as Timestamp).toDate().getFullYear();
-
-            const yearData = yearlyData.find(
-                (item: any) => item.yearmonth === transactionYear.toString()
-            );
+            const yearData = yearlyData.find(item => item.yearmonth === transactionYear.toString());
 
             if (yearData) {
                 if (transaction.type === "income") {
-                    yearData.income += transaction.amount;
+                    yearData.income += Number(transaction.amount);
                 } else if (transaction.type === "expense") {
-                    yearData.expense += transaction.amount;
+                    yearData.expense += Number(transaction.amount);
                 }
             }
         });
 
-        const stats = yearlyData.flatMap((year: any) => [
+        const stats = yearlyData.flatMap((year) => [
             {
                 value: year.income,
                 label: year.year,
