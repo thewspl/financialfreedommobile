@@ -34,6 +34,13 @@ export default function CustomTabs({
                 color={isFocused ? colors.primary : colors.neutral400}
             />
         ),
+        finance: (isFocused: boolean) => (
+            <Icons.Coins
+                size={verticalScale(30)}
+                weight={isFocused ? "fill" : "regular"}
+                color={isFocused ? colors.primary : colors.neutral400}
+            />
+        ),
         profile: (isFocused: boolean) => (
             <Icons.User
                 size={verticalScale(30)}
