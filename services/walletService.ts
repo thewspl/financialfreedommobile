@@ -49,7 +49,7 @@ export const deleteWallet = async (walletId: string): Promise<ResponseType> => {
         const walletRef = doc(firestore, "wallets", walletId);
         await deleteDoc(walletRef);
 
-        deleteTransactionsByWalletId(walletId);
+        await deleteTransactionsByWalletId(walletId);
 
         return { success: true, msg: "Cüzdan silindi" };
     } catch (err: any) {
@@ -88,9 +88,6 @@ export const deleteTransactionsByWalletId = async (walletId: string): Promise<Re
             success: true,
             msg: "Tüm işlemler başarıyla silindi."
         }
-
-
-        return { success: true, msg: "Cüzdan silindi" };
     } catch (err: any) {
         console.log("Cüzdan silinirken hata meydana geldi", err);
         return { success: false, msg: err.message };
